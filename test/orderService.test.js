@@ -4,6 +4,8 @@ const assert = require("node:assert");
 const {
   calculateSubtotal,
   calculateShipping,
+  calculateTax,
+  calculatePriorityHandlingFee,
   createOrderSummary,
   findOrderById
 } = require("../src/orderService");
@@ -23,6 +25,12 @@ test("calculateShipping should return free shipping for high-value order", () =>
   assert.equal(shipping, 0);
 });
 
+test("calculateTax should compute US tax", () => {
+  const tax = calculateTax("US", 200);
+
+  assert.equal(tax, 14.5);
+});
+
 test("createOrderSummary should include a final total", () => {
   const order = createOrderSummary({
     id: "101",
@@ -33,11 +41,32 @@ test("createOrderSummary should include a final total", () => {
       { sku: "A-1", price: 120, qty: 2 },
       { sku: "B-2", price: 80, qty: 1 }
     ],
-    coupon: { type: "percent", value: 10 }
+    coupon: { type: "percent", value: 10 },
+    priority: true
   });
 
   assert.ok(order.total > 0);
   assert.equal(order.shipping, 25);
+  assert.equal(order.priorityFee, 49);
+});
+
+test("calculatePriorityHandlingFee should ignore invalid values", () => {
+  const nanFee = calculatePriorityHandlingFee({
+    priority: true,
+    priorityFee: "abc"
+  });
+  const negativeFee = calculatePriorityHandlingFee({
+    priority: true,
+    priorityFee: -20
+  });
+  const validFee = calculatePriorityHandlingFee({
+    priority: true,
+    priorityFee: "35.5"
+  });
+
+  assert.equal(nanFee, 49);
+  assert.equal(negativeFee, 49);
+  assert.equal(validFee, 35.5);
 });
 
 test("findOrderById should find order by numeric id", () => {

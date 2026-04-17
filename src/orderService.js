@@ -32,6 +32,31 @@ function calculateShipping(countryCode, subtotal) {
   return shippingRatesByRegion[region] || 999;
 }
 
+function calculateTax(countryCode, subtotal) {
+  if (countryCode === "IN") {
+    return (subtotal * 18) / 100;
+  }
+
+  if (countryCode === "US") {
+    return (subtotal * 7.25) / 100;
+  }
+
+  return (subtotal * 12) / 100;
+}
+
+function calculatePriorityHandlingFee(orderInput) {
+  if (!orderInput.priority) return 0;
+
+  if (orderInput.priorityFee !== undefined && orderInput.priorityFee !== null) {
+    const parsedFee = Number(orderInput.priorityFee);
+    if (Number.isFinite(parsedFee) && parsedFee >= 0) {
+      return parsedFee;
+    }
+  }
+
+  return 49;
+}
+
 function applyCoupon(subtotal, coupon) {
   if (!coupon) return subtotal;
 
@@ -59,7 +84,12 @@ async function notifyWarehouse(order) {
 function createOrderSummary(orderInput) {
   const subtotal = calculateSubtotal(orderInput.items);
   const shipping = calculateShipping(orderInput.countryCode, subtotal);
-  const discountedTotal = applyCoupon(subtotal + shipping, orderInput.coupon);
+  const tax = calculateTax(orderInput.countryCode, subtotal);
+  const priorityFee = calculatePriorityHandlingFee(orderInput);
+  const discountedTotal = applyCoupon(
+    subtotal + shipping + tax + priorityFee,
+    orderInput.coupon
+  );
 
   const order = {
     id: orderInput.id,
@@ -68,6 +98,8 @@ function createOrderSummary(orderInput) {
     items: orderInput.items,
     subtotal,
     shipping,
+    tax,
+    priorityFee,
     total: discountedTotal,
     createdAt: new Date().toISOString()
   };
@@ -92,6 +124,8 @@ function getProcessedOrders() {
 module.exports = {
   calculateSubtotal,
   calculateShipping,
+  calculateTax,
+  calculatePriorityHandlingFee,
   applyCoupon,
   createOrderSummary,
   findOrderById,
