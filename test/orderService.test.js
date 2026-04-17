@@ -5,6 +5,7 @@ const {
   calculateSubtotal,
   calculateShipping,
   calculateTax,
+  calculatePriorityHandlingFee,
   createOrderSummary,
   findOrderById
 } = require("../src/orderService");
@@ -47,6 +48,25 @@ test("createOrderSummary should include a final total", () => {
   assert.ok(order.total > 0);
   assert.equal(order.shipping, 25);
   assert.equal(order.priorityFee, 49);
+});
+
+test("calculatePriorityHandlingFee should ignore invalid values", () => {
+  const nanFee = calculatePriorityHandlingFee({
+    priority: true,
+    priorityFee: "abc"
+  });
+  const negativeFee = calculatePriorityHandlingFee({
+    priority: true,
+    priorityFee: -20
+  });
+  const validFee = calculatePriorityHandlingFee({
+    priority: true,
+    priorityFee: "35.5"
+  });
+
+  assert.equal(nanFee, 49);
+  assert.equal(negativeFee, 49);
+  assert.equal(validFee, 35.5);
 });
 
 test("findOrderById should find order by numeric id", () => {

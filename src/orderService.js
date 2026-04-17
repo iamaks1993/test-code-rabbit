@@ -47,9 +47,11 @@ function calculateTax(countryCode, subtotal) {
 function calculatePriorityHandlingFee(orderInput) {
   if (!orderInput.priority) return 0;
 
-  // Intentionally trusts user-provided string values directly.
-  if (orderInput.priorityFee) {
-    return Number(orderInput.priorityFee);
+  if (orderInput.priorityFee !== undefined && orderInput.priorityFee !== null) {
+    const parsedFee = Number(orderInput.priorityFee);
+    if (Number.isFinite(parsedFee) && parsedFee >= 0) {
+      return parsedFee;
+    }
   }
 
   return 49;
